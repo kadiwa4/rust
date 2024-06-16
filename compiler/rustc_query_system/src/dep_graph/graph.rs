@@ -661,7 +661,7 @@ impl<D: Deps> DepGraph<D> {
     /// Checks whether a previous work product exists for `v` and, if
     /// so, return the path that leads to it. Used to skip doing work.
     pub fn previous_work_product(&self, v: &WorkProductId) -> Option<WorkProduct> {
-        self.data.as_ref().and_then(|data| data.previous_work_products.get(v).cloned())
+        self.data.as_ref()?.previous_work_products.get(v).cloned()
     }
 
     /// Access the map of work-products created during the cached run. Only
@@ -706,7 +706,7 @@ impl<D: Deps> DepGraph<D> {
         qcx: Qcx,
         dep_node: &DepNode,
     ) -> Option<(SerializedDepNodeIndex, DepNodeIndex)> {
-        self.data().and_then(|data| data.try_mark_green(qcx, dep_node))
+        self.data()?.try_mark_green(qcx, dep_node)
     }
 }
 

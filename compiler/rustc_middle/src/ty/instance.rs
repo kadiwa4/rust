@@ -216,9 +216,9 @@ impl<'tcx> Instance<'tcx> {
         }
 
         match self.def {
-            InstanceDef::Item(def) => tcx
-                .upstream_monomorphizations_for(def)
-                .and_then(|monos| monos.get(&self.args).cloned()),
+            InstanceDef::Item(def) => {
+                (*tcx.upstream_monomorphizations_for(def))?.get(&self.args).copied()
+            }
             InstanceDef::DropGlue(_, Some(_)) | InstanceDef::AsyncDropGlueCtorShim(_, _) => {
                 tcx.upstream_drop_glue_for(self.args)
             }

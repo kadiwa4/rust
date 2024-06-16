@@ -17,22 +17,21 @@ where
     Ty: TyAbiInterface<'a, C> + Copy,
     C: HasDataLayout,
 {
-    arg.layout.homogeneous_aggregate(cx).ok().and_then(|ha| ha.unit()).and_then(|unit| {
-        let size = arg.layout.size;
+    let unit = arg.layout.homogeneous_aggregate(cx).ok()?.unit()?;
+    let size = arg.layout.size;
 
-        // Ensure we have at most four uniquely addressable members.
-        if size > unit.size.checked_mul(4, cx).unwrap() {
-            return None;
-        }
+    // Ensure we have at most four uniquely addressable members.
+    if size > unit.size.checked_mul(4, cx).unwrap() {
+        return None;
+    }
 
-        let valid_unit = match unit.kind {
-            RegKind::Integer => false,
-            RegKind::Float => true,
-            RegKind::Vector => size.bits() == 64 || size.bits() == 128,
-        };
+    let valid_unit = match unit.kind {
+        RegKind::Integer => false,
+        RegKind::Float => true,
+        RegKind::Vector => size.bits() == 64 || size.bits() == 128,
+    };
 
-        valid_unit.then_some(Uniform::consecutive(unit, size))
-    })
+    valid_unit.then_some(Uniform::consecutive(unit, size))
 }
 
 fn classify_ret<'a, Ty, C>(cx: &C, ret: &mut ArgAbi<'a, Ty>, kind: AbiKind)
