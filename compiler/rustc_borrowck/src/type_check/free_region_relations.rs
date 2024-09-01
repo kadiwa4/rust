@@ -113,15 +113,9 @@ impl UniversalRegionRelations<'_> {
 
         debug!("non_local_bound: post_dom={:?}", post_dom);
 
-        post_dom.and_then(|post_dom| {
-            // If the mutual immediate postdom is not local, then
-            // there is no non-local result we can return.
-            if !self.universal_regions.is_local_free_region(post_dom) {
-                Some(post_dom)
-            } else {
-                None
-            }
-        })
+        // If the mutual immediate postdom is not local, then
+        // there is no non-local result we can return.
+        post_dom.filter(|&post_dom| !self.universal_regions.is_local_free_region(post_dom))
     }
 
     /// Helper for `non_local_upper_bounds` and `non_local_lower_bounds`.

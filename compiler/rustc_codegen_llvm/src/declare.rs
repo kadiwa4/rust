@@ -223,9 +223,6 @@ impl<'ll, 'tcx> CodegenCx<'ll, 'tcx> {
     /// Gets defined or externally defined (AvailableExternally linkage) value by
     /// name.
     pub(crate) fn get_defined_value(&self, name: &str) -> Option<&'ll Value> {
-        self.get_declared_value(name).and_then(|val| {
-            let declaration = unsafe { llvm::LLVMIsDeclaration(val) != 0 };
-            if !declaration { Some(val) } else { None }
-        })
+        self.get_declared_value(name).filter(|&val| unsafe { llvm::LLVMIsDeclaration(val) == 0 })
     }
 }

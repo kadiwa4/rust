@@ -2748,17 +2748,16 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, '_, 'infcx, 'tcx> {
                 // field access to a union. If we find that, then we will keep the place of the
                 // union being accessed and the field that was being accessed so we can check the
                 // second borrowed place for the same union and an access to a different field.
-                for (place_base, elem) in first_borrowed_place.iter_projections().rev() {
-                    match elem {
+                let (target_base, target_field) = first_borrowed_place
+                    .iter_projections()
+                    .rev()
+                    .find_map(|(place_base, elem)| match elem {
                         ProjectionElem::Field(field, _) if union_ty(place_base).is_some() => {
-                            return Some((place_base, field));
+                            Some((place_base, field))
                         }
-                        _ => {}
-                    }
-                }
-                None
-            })
-            .and_then(|(target_base, target_field)| {
+                        _ => None,
+                    })?;
+
                 // With the place of a union and a field access into it, we traverse the second
                 // borrowed place and look for an access to a different field of the same union.
                 for (place_base, elem) in second_borrowed_place.iter_projections().rev() {

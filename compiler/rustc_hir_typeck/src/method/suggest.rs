@@ -2282,15 +2282,14 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                 // for CandidateSource::Impl, `Self` will be instantiated to a concrete type
                 // but for CandidateSource::Trait, `Self` is still `Self`
                 let sig = self.tcx.fn_sig(assoc.def_id).instantiate_identity();
-                sig.inputs().skip_binder().get(0).and_then(|first| {
-                    // if the type of first arg is the same as the current impl type, we should take the first arg into assoc function
-                    let first_ty = first.peel_refs();
-                    if first_ty == self_ty || first_ty == self.tcx.types.self_param {
-                        Some(first.ref_mutability().map_or("", |mutbl| mutbl.ref_prefix_str()))
-                    } else {
-                        None
-                    }
-                })
+                let first = sig.inputs().skip_binder().first()?;
+                // if the type of first arg is the same as the current impl type, we should take the first arg into assoc function
+                let first_ty = first.peel_refs();
+                if first_ty == self_ty || first_ty == self.tcx.types.self_param {
+                    Some(first.ref_mutability().map_or("", |mutbl| mutbl.ref_prefix_str()))
+                } else {
+                    None
+                }
             });
 
             let mut applicability = Applicability::MachineApplicable;
@@ -2433,9 +2432,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         _ => None,
                     };
 
-                    if lang_item.is_none() {
-                        continue;
-                    }
+                    let Some(lang_item) = lang_item else { continue };
 
                     let span_included = match parent_expr.kind {
                         hir::ExprKind::Struct(_, eps, _) => {
@@ -2450,9 +2447,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         continue;
                     }
 
-                    let Some(range_def_id) =
-                        lang_item.and_then(|lang_item| self.tcx.lang_items().get(lang_item))
-                    else {
+                    let Some(range_def_id) = self.tcx.lang_items().get(lang_item) else {
                         continue;
                     };
                     let range_ty =

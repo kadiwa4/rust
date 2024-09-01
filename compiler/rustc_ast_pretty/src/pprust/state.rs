@@ -540,7 +540,7 @@ pub trait PrintState<'a>: std::ops::Deref<Target = pp::Printer> + std::ops::Dere
     }
 
     fn next_comment(&mut self) -> Option<Comment> {
-        self.comments_mut().and_then(|c| c.next())
+        self.comments_mut()?.next()
     }
 
     fn maybe_print_trailing_comment(&mut self, span: rustc_span::Span, next_pos: Option<BytePos>) {

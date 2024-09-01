@@ -147,36 +147,31 @@ fn sized_trait_bound_spans<'tcx>(
 }
 
 fn get_sized_bounds(tcx: TyCtxt<'_>, trait_def_id: DefId) -> SmallVec<[Span; 1]> {
-    tcx.hir()
-        .get_if_local(trait_def_id)
-        .and_then(|node| match node {
-            hir::Node::Item(hir::Item {
-                kind: hir::ItemKind::Trait(.., generics, bounds, _),
-                ..
-            }) => Some(
-                generics
-                    .predicates
-                    .iter()
-                    .filter_map(|pred| {
-                        match pred {
-                            hir::WherePredicate::BoundPredicate(pred)
-                                if pred.bounded_ty.hir_id.owner.to_def_id() == trait_def_id =>
-                            {
-                                // Fetch spans for trait bounds that are Sized:
-                                // `trait T where Self: Pred`
-                                Some(sized_trait_bound_spans(tcx, pred.bounds))
-                            }
-                            _ => None,
-                        }
-                    })
-                    .flatten()
-                    // Fetch spans for supertraits that are `Sized`: `trait T: Super`.
-                    .chain(sized_trait_bound_spans(tcx, bounds))
-                    .collect::<SmallVec<[Span; 1]>>(),
-            ),
-            _ => None,
-        })
-        .unwrap_or_else(SmallVec::new)
+    match tcx.hir().get_if_local(trait_def_id) {
+        Some(hir::Node::Item(&hir::Item {
+            kind: hir::ItemKind::Trait(.., generics, bounds, _),
+            ..
+        })) => generics
+            .predicates
+            .iter()
+            .filter_map(|pred| {
+                match pred {
+                    hir::WherePredicate::BoundPredicate(pred)
+                        if pred.bounded_ty.hir_id.owner.to_def_id() == trait_def_id =>
+                    {
+                        // Fetch spans for trait bounds that are Sized:
+                        // `trait T where Self: Pred`
+                        Some(sized_trait_bound_spans(tcx, pred.bounds))
+                    }
+                    _ => None,
+                }
+            })
+            .flatten()
+            // Fetch spans for supertraits that are `Sized`: `trait T: Super`.
+            .chain(sized_trait_bound_spans(tcx, bounds))
+            .collect::<SmallVec<[Span; 1]>>(),
+        _ => SmallVec::new(),
+    }
 }
 
 fn predicates_reference_self(

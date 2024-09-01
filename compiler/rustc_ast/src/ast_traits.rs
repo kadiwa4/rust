@@ -140,10 +140,10 @@ impl<T: AstDeref<Target: HasTokens>> HasTokens for T {
 
 impl<T: HasTokens> HasTokens for Option<T> {
     fn tokens(&self) -> Option<&LazyAttrTokenStream> {
-        self.as_ref().and_then(|inner| inner.tokens())
+        self.as_ref()?.tokens()
     }
     fn tokens_mut(&mut self) -> Option<&mut Option<LazyAttrTokenStream>> {
-        self.as_mut().and_then(|inner| inner.tokens_mut())
+        self.as_mut()?.tokens_mut()
     }
 }
 

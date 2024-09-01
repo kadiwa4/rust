@@ -501,12 +501,12 @@ where
             (niche_variants.end().index() as u128 - niche_variants.start().index() as u128) + 1;
 
         // Find the field with the largest niche
-        let (field_index, niche, (niche_start, niche_scalar)) = variants[largest_variant_index]
+        let (field_index, niche) = variants[largest_variant_index]
             .iter()
             .enumerate()
             .filter_map(|(j, field)| Some((j, field.largest_niche?)))
-            .max_by_key(|(_, niche)| niche.available(dl))
-            .and_then(|(j, niche)| Some((j, niche, niche.reserve(dl, count)?)))?;
+            .max_by_key(|(_, niche)| niche.available(dl))?;
+        let (niche_start, niche_scalar) = niche.reserve(dl, count)?;
         let niche_offset =
             niche.offset + variant_layouts[largest_variant_index].fields.offset(field_index);
         let niche_size = niche.value.size(dl);

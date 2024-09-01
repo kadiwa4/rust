@@ -270,7 +270,7 @@ impl<'tcx> TypeckResults<'tcx> {
 
     pub fn type_dependent_def(&self, id: HirId) -> Option<(DefKind, DefId)> {
         validate_hir_id_for_typeck_results(self.hir_owner, id);
-        self.type_dependent_defs.get(&id.local_id).cloned().and_then(|r| r.ok())
+        self.type_dependent_defs.get(&id.local_id)?.ok()
     }
 
     pub fn type_dependent_def_id(&self, id: HirId) -> Option<DefId> {

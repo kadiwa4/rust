@@ -1200,10 +1200,8 @@ impl<'a, 'b, 'tcx> BuildReducedGraphVisitor<'a, 'b, 'tcx> {
         } else if attr::contains_name(&item.attrs, sym::proc_macro_attribute) {
             return Some((MacroKind::Attr, item.ident, item.span));
         } else if let Some(attr) = attr::find_by_name(&item.attrs, sym::proc_macro_derive) {
-            if let Some(nested_meta) = attr.meta_item_list().and_then(|list| list.get(0).cloned()) {
-                if let Some(ident) = nested_meta.ident() {
-                    return Some((MacroKind::Derive, ident, ident.span));
-                }
+            if let Some(ident) = attr.meta_item_list().and_then(|list| list.first()?.ident()) {
+                return Some((MacroKind::Derive, ident, ident.span));
             }
         }
         None

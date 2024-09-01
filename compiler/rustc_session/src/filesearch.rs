@@ -174,8 +174,7 @@ pub fn sysroot_candidates() -> SmallVec<[PathBuf; 2]> {
             if path.ends_with(target) {
                 sysroot_candidates.extend(
                     path.parent() // chop off `$target`
-                        .and_then(|p| p.parent()) // chop off `rustlib`
-                        .and_then(|p| p.parent()) // chop off `lib`
+                        .and_then(|p| p.parent()?.parent()) // chop off `lib/rustlib`
                         .map(|s| s.to_owned()),
                 );
             }
@@ -220,8 +219,7 @@ pub fn get_or_default_sysroot() -> Result<PathBuf, String> {
         // if `dir` points target's dir, move up to the sysroot
         let mut sysroot_dir = if dir.ends_with(crate::config::host_triple()) {
             dir.parent() // chop off `$target`
-                .and_then(|p| p.parent()) // chop off `rustlib`
-                .and_then(|p| p.parent()) // chop off `lib`
+                .and_then(|p| p.parent()?.parent()) // chop off `lib/rustlib`
                 .map(|s| s.to_owned())
                 .ok_or_else(|| {
                     format!("Could not move 3 levels upper using `parent()` on {}", dir.display())

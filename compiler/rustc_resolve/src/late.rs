@@ -2342,12 +2342,11 @@ impl<'a: 'ast, 'b, 'ast, 'tcx> LateResolutionVisitor<'a, 'b, 'ast, 'tcx> {
             .as_ref()
             .and_then(|ty| {
                 if let TyKind::Path(None, _) = ty.kind {
-                    self.r.partial_res_map.get(&ty.id)
+                    self.r.partial_res_map.get(&ty.id)?.full_res()
                 } else {
                     None
                 }
             })
-            .and_then(|res| res.full_res())
             .filter(|res| {
                 // Permit the types that unambiguously always
                 // result in the same type constructor being used

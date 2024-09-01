@@ -22,23 +22,22 @@ where
     Ty: TyAbiInterface<'a, C> + Copy,
     C: HasDataLayout,
 {
-    arg.layout.homogeneous_aggregate(cx).ok().and_then(|ha| ha.unit()).and_then(|unit| {
-        // ELFv1 only passes one-member aggregates transparently.
-        // ELFv2 passes up to eight uniquely addressable members.
-        if (abi == ELFv1 && arg.layout.size > unit.size)
-            || arg.layout.size > unit.size.checked_mul(8, cx).unwrap()
-        {
-            return None;
-        }
+    let unit = arg.layout.homogeneous_aggregate(cx).ok()?.unit()?;
+    // ELFv1 only passes one-member aggregates transparently.
+    // ELFv2 passes up to eight uniquely addressable members.
+    if (abi == ELFv1 && arg.layout.size > unit.size)
+        || arg.layout.size > unit.size.checked_mul(8, cx).unwrap()
+    {
+        return None;
+    }
 
-        let valid_unit = match unit.kind {
-            RegKind::Integer => false,
-            RegKind::Float => true,
-            RegKind::Vector => arg.layout.size.bits() == 128,
-        };
+    let valid_unit = match unit.kind {
+        RegKind::Integer => false,
+        RegKind::Float => true,
+        RegKind::Vector => arg.layout.size.bits() == 128,
+    };
 
-        valid_unit.then_some(Uniform::consecutive(unit, arg.layout.size))
-    })
+    valid_unit.then_some(Uniform::consecutive(unit, arg.layout.size))
 }
 
 fn classify<'a, Ty, C>(cx: &C, arg: &mut ArgAbi<'a, Ty>, abi: ABI, is_ret: bool)

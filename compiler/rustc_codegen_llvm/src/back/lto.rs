@@ -123,9 +123,8 @@ fn prepare_lto(
             let obj_files = archive
                 .members()
                 .filter_map(|child| {
-                    child.ok().and_then(|c| {
-                        std::str::from_utf8(c.name()).ok().map(|name| (name.trim(), c))
-                    })
+                    let child = child.ok()?;
+                    std::str::from_utf8(child.name()).ok().map(|name| (name.trim(), child))
                 })
                 .filter(|&(name, _)| looks_like_rust_object_file(name));
             for (name, child) in obj_files {

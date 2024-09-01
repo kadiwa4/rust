@@ -2990,7 +2990,7 @@ impl<'tcx> TyCtxt<'tcx> {
 
     pub fn named_bound_var(self, id: HirId) -> Option<resolve_bound_vars::ResolvedArg> {
         debug!(?id, "named_region");
-        self.named_variable_map(id.owner).and_then(|map| map.get(&id.local_id).cloned())
+        self.named_variable_map(id.owner)?.get(&id.local_id).copied()
     }
 
     pub fn is_late_bound(self, id: HirId) -> bool {

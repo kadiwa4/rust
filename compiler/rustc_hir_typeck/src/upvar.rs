@@ -1177,7 +1177,7 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
         const AUTO_TRAITS: [&str; 6] =
             ["`Clone`", "`Sync`", "`Send`", "`Unpin`", "`UnwindSafe`", "`RefUnwindSafe`"];
 
-        let root_var_min_capture_list = min_captures.and_then(|m| m.get(&var_hir_id))?;
+        let root_var_min_capture_list = min_captures?.get(&var_hir_id)?;
 
         let ty = self.resolve_vars_if_possible(self.node_ty(var_hir_id));
 

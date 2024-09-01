@@ -1054,16 +1054,14 @@ where
                         let field_start = variant.fields.offset(i);
                         if field_start <= offset {
                             let field = variant.field(cx, i);
-                            result = field.to_result().ok().and_then(|field| {
-                                if ptr_end <= field_start + field.size {
+                            result = field
+                                .to_result()
+                                .ok()
+                                .filter(|field| ptr_end <= field_start + field.size)
+                                .and_then(|field| {
                                     // We found the right field, look inside it.
-                                    let field_info =
-                                        field.pointee_info_at(cx, offset - field_start);
-                                    field_info
-                                } else {
-                                    None
-                                }
-                            });
+                                    field.pointee_info_at(cx, offset - field_start)
+                                });
                             if result.is_some() {
                                 break;
                             }

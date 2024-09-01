@@ -101,12 +101,10 @@ impl SearchPath {
         let files = match std::fs::read_dir(&dir) {
             Ok(files) => files
                 .filter_map(|e| {
-                    e.ok().and_then(|e| {
-                        e.file_name().to_str().map(|s| SearchPathFile {
-                            path: e.path(),
-                            file_name_str: s.to_string(),
-                        })
-                    })
+                    let e = e.ok()?;
+                    e.file_name()
+                        .to_str()
+                        .map(|s| SearchPathFile { path: e.path(), file_name_str: s.to_string() })
                 })
                 .collect::<Vec<_>>(),
             Err(..) => vec![],

@@ -229,13 +229,7 @@ pub(crate) struct NameResolution<'a> {
 impl<'a> NameResolution<'a> {
     /// Returns the binding for the name if it is known or None if it not known.
     pub(crate) fn binding(&self) -> Option<NameBinding<'a>> {
-        self.binding.and_then(|binding| {
-            if !binding.is_glob_import() || self.single_imports.is_empty() {
-                Some(binding)
-            } else {
-                None
-            }
-        })
+        self.binding.filter(|binding| !binding.is_glob_import() || self.single_imports.is_empty())
     }
 }
 

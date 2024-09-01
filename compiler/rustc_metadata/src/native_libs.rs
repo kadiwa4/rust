@@ -128,8 +128,8 @@ fn find_bundled_library(
     {
         let verbatim = verbatim.unwrap_or(false);
         return find_native_static_library(name.as_str(), verbatim, sess)
-            .file_name()
-            .and_then(|s| s.to_str())
+            .file_name()?
+            .to_str()
             .map(Symbol::intern);
     }
     None

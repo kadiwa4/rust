@@ -222,19 +222,17 @@ impl<'ll, 'tcx> ConstMethods<'tcx> for CodegenCx<'ll, 'tcx> {
     }
 
     fn const_to_opt_uint(&self, v: &'ll Value) -> Option<u64> {
-        try_as_const_integral(v).and_then(|v| unsafe {
-            let mut i = 0u64;
-            let success = llvm::LLVMRustConstIntGetZExtValue(v, &mut i);
-            success.then_some(i)
-        })
+        let v = try_as_const_integral(v)?;
+        let mut i = 0u64;
+        let success = unsafe { llvm::LLVMRustConstIntGetZExtValue(v, &mut i) };
+        success.then_some(i)
     }
 
     fn const_to_opt_u128(&self, v: &'ll Value, sign_ext: bool) -> Option<u128> {
-        try_as_const_integral(v).and_then(|v| unsafe {
-            let (mut lo, mut hi) = (0u64, 0u64);
-            let success = llvm::LLVMRustConstInt128Get(v, sign_ext, &mut hi, &mut lo);
-            success.then_some(hi_lo_to_u128(lo, hi))
-        })
+        let v = try_as_const_integral(v)?;
+        let (mut lo, mut hi) = (0u64, 0u64);
+        let success = unsafe { llvm::LLVMRustConstInt128Get(v, sign_ext, &mut hi, &mut lo) };
+        success.then_some(hi_lo_to_u128(lo, hi))
     }
 
     fn scalar_to_backend(&self, cv: Scalar, layout: abi::Scalar, llty: &'ll Type) -> &'ll Value {

@@ -688,35 +688,31 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, '_, 'infcx, 'tcx> {
         (
             true,
             td.is_local(),
-            td.as_local().and_then(|tld| match self.infcx.tcx.hir_node_by_def_id(tld) {
-                Node::Item(hir::Item { kind: hir::ItemKind::Trait(_, _, _, _, items), .. }) => {
-                    let mut f_in_trait_opt = None;
-                    for hir::TraitItemRef { id: fi, kind: k, .. } in *items {
+            td.as_local().and_then(|tld| {
+                let Node::Item(&hir::Item {
+                    kind: hir::ItemKind::Trait(_, _, _, _, items), ..
+                }) = self.infcx.tcx.hir_node_by_def_id(tld)
+                else {
+                    return None;
+                };
+                let f_in_trait =
+                    items.iter().find_map(|hir::TraitItemRef { id: fi, kind, .. }| {
                         let hi = fi.hir_id();
-                        if !matches!(k, hir::AssocItemKind::Fn { .. }) {
-                            continue;
-                        }
-                        if self.infcx.tcx.hir().name(hi) != self.infcx.tcx.hir().name(my_hir) {
-                            continue;
-                        }
-                        f_in_trait_opt = Some(hi);
-                        break;
-                    }
-                    f_in_trait_opt.and_then(|f_in_trait| {
-                        if let Node::TraitItem(ti) = self.infcx.tcx.hir_node(f_in_trait)
-                            && let hir::TraitItemKind::Fn(sig, _) = ti.kind
-                            && let Some(ty) = sig.decl.inputs.get(local.index() - 1)
-                            && let hir::TyKind::Ref(_, mut_ty) = ty.kind
-                            && let hir::Mutability::Not = mut_ty.mutbl
-                            && sig.decl.implicit_self.has_implicit_self()
-                        {
-                            Some(ty.span)
-                        } else {
-                            None
-                        }
-                    })
+                        (matches!(kind, hir::AssocItemKind::Fn { .. })
+                            && self.infcx.tcx.hir().name(hi) != self.infcx.tcx.hir().name(my_hir))
+                        .then_some(hi)
+                    })?;
+                if let Node::TraitItem(ti) = self.infcx.tcx.hir_node(f_in_trait)
+                    && let hir::TraitItemKind::Fn(sig, _) = ti.kind
+                    && let Some(ty) = sig.decl.inputs.get(local.index() - 1)
+                    && let hir::TyKind::Ref(_, mut_ty) = ty.kind
+                    && let hir::Mutability::Not = mut_ty.mutbl
+                    && sig.decl.implicit_self.has_implicit_self()
+                {
+                    Some(ty.span)
+                } else {
+                    None
                 }
-                _ => None,
             }),
         )
     }

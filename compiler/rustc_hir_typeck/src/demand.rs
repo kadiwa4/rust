@@ -481,12 +481,10 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
                         rcvr,
                     )
                     .ok()
-                    .and_then(|method| {
-                        let _ = self
-                            .at(&ObligationCause::dummy(), self.param_env)
+                    .filter(|_| {
+                        self.at(&ObligationCause::dummy(), self.param_env)
                             .eq(DefineOpaqueTypes::Yes, ideal_rcvr_ty, expected_ty)
-                            .ok()?;
-                        Some(method)
+                            .is_ok()
                     });
 
                 // Find what argument caused our rcvr to become incompatible

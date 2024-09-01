@@ -1551,10 +1551,10 @@ impl<'a, 'tcx> BoundVarContext<'a, 'tcx> {
                 ObjectLifetimeDefault::Param(param_def_id) => {
                     // This index can be used with `generic_args` since `parent_count == 0`.
                     let index = generics.param_def_id_to_index[&param_def_id] as usize;
-                    generic_args.args.get(index).and_then(|arg| match arg {
-                        GenericArg::Lifetime(lt) => map.defs.get(&lt.hir_id).copied(),
+                    match generic_args.args.get(index) {
+                        Some(&GenericArg::Lifetime(lt)) => map.defs.get(&lt.hir_id).copied(),
                         _ => None,
-                    })
+                    }
                 }
                 ObjectLifetimeDefault::Ambiguous => None,
             };

@@ -165,11 +165,9 @@ impl<'tcx> Cx<'tcx> {
         let fn_sig = self.typeck_results.liberated_fn_sigs()[owner_id];
 
         body.params.iter().enumerate().map(move |(index, param)| {
-            let ty_span = fn_decl
-                .inputs
-                .get(index)
-                // Make sure that inferred closure args have no type span
-                .and_then(|ty| if param.pat.span != ty.span { Some(ty.span) } else { None });
+            // Make sure that inferred closure args have no type span
+            let ty_span =
+                fn_decl.inputs.get(index).map(|ty| ty.span).filter(|&span| param.pat.span != span);
 
             let self_kind = if index == 0 && fn_decl.implicit_self.has_implicit_self() {
                 Some(fn_decl.implicit_self)

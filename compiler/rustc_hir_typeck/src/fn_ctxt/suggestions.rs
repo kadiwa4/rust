@@ -1409,11 +1409,8 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
             && let hir::PatKind::Path(qpath) | hir::PatKind::TupleStruct(qpath, _, _) =
                 &local.pat.kind
             && let hir::QPath::Resolved(None, path) = qpath
-            && let Some(did) = path
-                .res
-                .opt_def_id()
-                .and_then(|did| self.tcx.opt_parent(did))
-                .and_then(|did| self.tcx.opt_parent(did))
+            && let Some(did) =
+                path.res.opt_def_id().and_then(|did| self.tcx.opt_parent(self.tcx.opt_parent(did)?))
             && self.tcx.is_diagnostic_item(sym::Option, did)
         {
             return false;

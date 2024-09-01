@@ -186,14 +186,14 @@ impl<'a, 'hir> LoweringContext<'a, 'hir> {
                         anon_const: self.lower_anon_const_to_anon_const(anon_const),
                     },
                     InlineAsmOperand::Sym { sym } => {
-                        let static_def_id = self
+                        let static_def_id = match self
                             .resolver
                             .get_partial_res(sym.id)
                             .and_then(|res| res.full_res())
-                            .and_then(|res| match res {
-                                Res::Def(DefKind::Static { .. }, def_id) => Some(def_id),
-                                _ => None,
-                            });
+                        {
+                            Some(Res::Def(DefKind::Static { .. }, def_id)) => Some(def_id),
+                            _ => None,
+                        };
 
                         if let Some(def_id) = static_def_id {
                             let path = self.lower_qpath(

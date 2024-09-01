@@ -214,10 +214,10 @@ impl<'tcx> ProjectionCache<'_, 'tcx> {
     }
 
     pub fn is_complete(&mut self, key: ProjectionCacheKey<'tcx>) -> Option<EvaluationResult> {
-        self.map().get(&key).and_then(|res| match res {
-            ProjectionCacheEntry::NormalizedTerm { ty: _, complete } => *complete,
+        match self.map().get(&key) {
+            Some(&ProjectionCacheEntry::NormalizedTerm { complete, .. }) => complete,
             _ => None,
-        })
+        }
     }
 
     /// Indicates that trying to normalize `key` resulted in

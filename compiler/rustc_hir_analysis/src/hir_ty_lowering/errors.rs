@@ -1384,26 +1384,23 @@ pub(crate) fn fn_trait_to_string(
     trait_segment: &hir::PathSegment<'_>,
     parenthesized: bool,
 ) -> String {
-    let args = trait_segment
-        .args
-        .and_then(|args| args.args.first())
-        .and_then(|arg| match arg {
-            hir::GenericArg::Type(ty) => match ty.kind {
-                hir::TyKind::Tup(t) => t
-                    .iter()
-                    .map(|e| tcx.sess.source_map().span_to_snippet(e.span))
-                    .collect::<Result<Vec<_>, _>>()
-                    .map(|a| a.join(", ")),
-                _ => tcx.sess.source_map().span_to_snippet(ty.span),
-            }
-            .map(|s| {
-                // `is_empty()` checks to see if the type is the unit tuple, if so we don't want a comma
-                if parenthesized || s.is_empty() { format!("({s})") } else { format!("({s},)") }
-            })
-            .ok(),
-            _ => None,
+    let args = match trait_segment.args.and_then(|args| args.args.first()) {
+        Some(&hir::GenericArg::Type(ty)) => match ty.kind {
+            hir::TyKind::Tup(t) => t
+                .iter()
+                .map(|e| tcx.sess.source_map().span_to_snippet(e.span))
+                .collect::<Result<Vec<_>, _>>()
+                .map(|a| a.join(", ")),
+            _ => tcx.sess.source_map().span_to_snippet(ty.span),
+        }
+        .map(|s| {
+            // `is_empty()` checks to see if the type is the unit tuple, if so we don't want a comma
+            if parenthesized || s.is_empty() { format!("({s})") } else { format!("({s},)") }
         })
-        .unwrap_or_else(|| "()".to_string());
+        .ok(),
+        _ => None,
+    }
+    .unwrap_or_else(|| "()".to_string());
 
     let ret = trait_segment
         .args()

@@ -339,36 +339,34 @@ impl<'tcx> LateLintPass<'tcx> for NonSnakeCase {
         let crate_ident = if let Some(name) = &cx.tcx.sess.opts.crate_name {
             Some(Ident::from_str(name))
         } else {
-            attr::find_by_name(cx.tcx.hir().attrs(hir::CRATE_HIR_ID), sym::crate_name)
-                .and_then(|attr| attr.meta())
-                .and_then(|meta| {
-                    meta.name_value_literal().and_then(|lit| {
-                        if let ast::LitKind::Str(name, ..) = lit.kind {
-                            // Discard the double quotes surrounding the literal.
-                            let sp = cx
-                                .sess()
-                                .source_map()
-                                .span_to_snippet(lit.span)
-                                .ok()
-                                .and_then(|snippet| {
-                                    let left = snippet.find('"')?;
-                                    let right =
-                                        snippet.rfind('"').map(|pos| snippet.len() - pos)?;
+            attr::find_by_name(cx.tcx.hir().attrs(hir::CRATE_HIR_ID), sym::crate_name).and_then(
+                |attr| {
+                    let meta = attr.meta()?;
+                    let lit = meta.name_value_literal()?;
+                    let ast::LitKind::Str(name, ..) = lit.kind else {
+                        return None;
+                    };
+                    // Discard the double quotes surrounding the literal.
+                    let sp = cx
+                        .sess()
+                        .source_map()
+                        .span_to_snippet(lit.span)
+                        .ok()
+                        .and_then(|snippet| {
+                            let left = snippet.find('"')? + 1;
+                            let right = snippet.len() - snippet.rfind('"')?;
 
-                                    Some(
-                                        lit.span
-                                            .with_lo(lit.span.lo() + BytePos(left as u32 + 1))
-                                            .with_hi(lit.span.hi() - BytePos(right as u32)),
-                                    )
-                                })
-                                .unwrap_or(lit.span);
+                            Some(
+                                lit.span
+                                    .with_lo(lit.span.lo() + BytePos(left as u32))
+                                    .with_hi(lit.span.hi() - BytePos(right as u32)),
+                            )
+                        })
+                        .unwrap_or(lit.span);
 
-                            Some(Ident::new(name, sp))
-                        } else {
-                            None
-                        }
-                    })
-                })
+                    Some(Ident::new(name, sp))
+                },
+            )
         };
 
         if let Some(ident) = &crate_ident {

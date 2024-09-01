@@ -496,8 +496,7 @@ fn should_panic(cx: &ExtCtxt<'_>, i: &ast::Item) -> ShouldPanic {
                     let msg = list
                         .iter()
                         .find(|mi| mi.has_name(sym::expected))
-                        .and_then(|mi| mi.meta_item())
-                        .and_then(|mi| mi.value_str());
+                        .and_then(|mi| mi.meta_item()?.value_str());
                     if list.len() != 1 || msg.is_none() {
                         cx.dcx()
                             .struct_span_warn(

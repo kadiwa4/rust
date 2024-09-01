@@ -1714,7 +1714,7 @@ impl<'a, 'tcx> ProbeContext<'a, 'tcx> {
                     pcx.method_name = Some(method_name);
                     pcx.assemble_inherent_candidates();
                     pcx.assemble_extension_candidates_for_all_traits();
-                    pcx.pick_core().and_then(|pick| pick.ok()).map(|pick| pick.item)
+                    pcx.pick_core()?.ok().map(|pick| pick.item)
                 })
                 .collect();
 

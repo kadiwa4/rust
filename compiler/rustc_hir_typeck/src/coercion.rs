@@ -164,8 +164,8 @@ impl<'f, 'tcx> Coerce<'f, 'tcx> {
     where
         F: FnOnce(Ty<'tcx>) -> Vec<Adjustment<'tcx>>,
     {
-        self.unify(a, b)
-            .and_then(|InferOk { value: ty, obligations }| success(f(ty), ty, obligations))
+        let InferOk { value: ty, obligations } = self.unify(a, b)?;
+        success(f(ty), ty, obligations)
     }
 
     #[instrument(skip(self))]
@@ -1051,16 +1051,15 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
     /// trait or region sub-obligations. (presumably we could, but it's not
     /// particularly important for diagnostics...)
     pub(crate) fn deref_once_mutably_for_diagnostic(&self, expr_ty: Ty<'tcx>) -> Option<Ty<'tcx>> {
-        self.autoderef(DUMMY_SP, expr_ty).nth(1).and_then(|(deref_ty, _)| {
-            self.infcx
-                .type_implements_trait(
-                    self.tcx.lang_items().deref_mut_trait()?,
-                    [expr_ty],
-                    self.param_env,
-                )
-                .may_apply()
-                .then_some(deref_ty)
-        })
+        let (deref_ty, _) = self.autoderef(DUMMY_SP, expr_ty).nth(1)?;
+        self.infcx
+            .type_implements_trait(
+                self.tcx.lang_items().deref_mut_trait()?,
+                [expr_ty],
+                self.param_env,
+            )
+            .may_apply()
+            .then_some(deref_ty)
     }
 
     /// Given some expressions, their known unified type and another expression,

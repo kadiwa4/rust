@@ -235,7 +235,7 @@ pub fn looks_like_rust_object_file(filename: &str) -> bool {
     }
 
     // Strip the ".o" at the end
-    let ext2 = path.file_stem().and_then(|s| Path::new(s).extension()).and_then(|s| s.to_str());
+    let ext2 = path.file_stem().and_then(|s| Path::new(s).extension()?.to_str());
 
     // Check if the "inner" extension
     ext2 == Some(RUST_CGU_EXT)

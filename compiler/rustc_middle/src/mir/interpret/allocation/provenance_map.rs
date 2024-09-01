@@ -101,7 +101,7 @@ impl<Prov: Provenance> ProvenanceMap<Prov> {
             Some(entry.1)
         } else {
             // Look up per-byte provenance.
-            self.bytes.as_ref().and_then(|b| b.get(&offset).copied())
+            self.bytes.as_ref()?.get(&offset).copied()
         }
     }
 

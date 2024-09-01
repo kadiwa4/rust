@@ -2317,7 +2317,7 @@ impl<'tcx> Printer<'tcx> for FmtPrinter<'_, 'tcx> {
 
 impl<'tcx> PrettyPrinter<'tcx> for FmtPrinter<'_, 'tcx> {
     fn ty_infer_name(&self, id: ty::TyVid) -> Option<Symbol> {
-        self.0.ty_infer_name_resolver.as_ref().and_then(|func| func(id))
+        self.0.ty_infer_name_resolver.as_ref()?(id)
     }
 
     fn reset_type_limit(&mut self) {
@@ -2325,7 +2325,7 @@ impl<'tcx> PrettyPrinter<'tcx> for FmtPrinter<'_, 'tcx> {
     }
 
     fn const_infer_name(&self, id: ty::ConstVid) -> Option<Symbol> {
-        self.0.const_infer_name_resolver.as_ref().and_then(|func| func(id))
+        self.0.const_infer_name_resolver.as_ref()?(id)
     }
 
     fn print_value_path(

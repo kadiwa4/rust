@@ -1882,11 +1882,8 @@ impl<'a> Parser<'a> {
 
     pub(super) fn recover_colon_as_semi(&mut self) -> bool {
         let line_idx = |span: Span| {
-            self.psess
-                .source_map()
-                .span_to_lines(span)
-                .ok()
-                .and_then(|lines| Some(lines.lines.get(0)?.line_index))
+            let lines = self.psess.source_map().span_to_lines(span).ok()?;
+            Some(lines.lines.first()?.line_index)
         };
 
         if self.may_recover()
@@ -2580,24 +2577,20 @@ impl<'a> Parser<'a> {
         start: Span,
         mut err: Diag<'a>,
     ) -> PResult<'a, GenericArg> {
-        let is_op_or_dot = AssocOp::from_token(&self.token)
-            .and_then(|op| {
-                if let AssocOp::Greater
+        let is_op_or_dot = match AssocOp::from_token(&self.token) {
+            // Don't recover from `foo::<bar = baz>`, because this could be an attempt to
+            // assign a value to a defaulted generic parameter.
+            None
+            | Some(
+                AssocOp::Greater
                 | AssocOp::Less
                 | AssocOp::ShiftRight
                 | AssocOp::GreaterEqual
-                // Don't recover from `foo::<bar = baz>`, because this could be an attempt to
-                // assign a value to a defaulted generic parameter.
                 | AssocOp::Assign
-                | AssocOp::AssignOp(_) = op
-                {
-                    None
-                } else {
-                    Some(op)
-                }
-            })
-            .is_some()
-            || self.token == TokenKind::Dot;
+                | AssocOp::AssignOp(_),
+            ) => self.token == TokenKind::Dot,
+            Some(_) => true,
+        };
         // This will be true when a trait object type `Foo +` or a path which was a `const fn` with
         // type params has been parsed.
         let was_op =

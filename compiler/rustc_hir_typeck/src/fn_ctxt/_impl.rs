@@ -904,74 +904,73 @@ impl<'a, 'tcx> FnCtxt<'a, 'tcx> {
     ) -> Option<(LocalDefId, &'tcx hir::FnDecl<'tcx>, bool)> {
         // Get enclosing Fn, if it is a function or a trait method, unless there's a `loop` or
         // `while` before reaching it, as block tail returns are not available in them.
-        self.tcx.hir().get_fn_id_for_return_block(blk_id).and_then(|item_id| {
-            match self.tcx.hir_node(item_id) {
-                Node::Item(&hir::Item {
-                    ident,
-                    kind: hir::ItemKind::Fn(ref sig, ..),
-                    owner_id,
-                    ..
-                }) => {
-                    // This is less than ideal, it will not suggest a return type span on any
-                    // method called `main`, regardless of whether it is actually the entry point,
-                    // but it will still present it as the reason for the expected type.
-                    Some((owner_id.def_id, sig.decl, ident.name != sym::main))
-                }
-                Node::TraitItem(&hir::TraitItem {
-                    kind: hir::TraitItemKind::Fn(ref sig, ..),
-                    owner_id,
-                    ..
-                }) => Some((owner_id.def_id, sig.decl, true)),
-                // FIXME: Suggestable if this is not a trait implementation
-                Node::ImplItem(&hir::ImplItem {
-                    kind: hir::ImplItemKind::Fn(ref sig, ..),
-                    owner_id,
-                    ..
-                }) => Some((owner_id.def_id, sig.decl, false)),
-                Node::Expr(&hir::Expr {
-                    hir_id,
-                    kind: hir::ExprKind::Closure(&hir::Closure { def_id, kind, fn_decl, .. }),
-                    ..
-                }) => {
-                    match kind {
-                        hir::ClosureKind::CoroutineClosure(_) => {
-                            // FIXME(async_closures): Implement this.
-                            return None;
-                        }
-                        hir::ClosureKind::Closure => Some((def_id, fn_decl, true)),
-                        hir::ClosureKind::Coroutine(hir::CoroutineKind::Desugared(
-                            _,
-                            hir::CoroutineSource::Fn,
-                        )) => {
-                            let (ident, sig, owner_id) = match self.tcx.parent_hir_node(hir_id) {
-                                Node::Item(&hir::Item {
-                                    ident,
-                                    kind: hir::ItemKind::Fn(ref sig, ..),
-                                    owner_id,
-                                    ..
-                                }) => (ident, sig, owner_id),
-                                Node::TraitItem(&hir::TraitItem {
-                                    ident,
-                                    kind: hir::TraitItemKind::Fn(ref sig, ..),
-                                    owner_id,
-                                    ..
-                                }) => (ident, sig, owner_id),
-                                Node::ImplItem(&hir::ImplItem {
-                                    ident,
-                                    kind: hir::ImplItemKind::Fn(ref sig, ..),
-                                    owner_id,
-                                    ..
-                                }) => (ident, sig, owner_id),
-                                _ => return None,
-                            };
-                            Some((owner_id.def_id, sig.decl, ident.name != sym::main))
-                        }
-                        _ => None,
-                    }
-                }
-                _ => None,
+        let item_id = self.tcx.hir().get_fn_id_for_return_block(blk_id)?;
+        match self.tcx.hir_node(item_id) {
+            Node::Item(&hir::Item {
+                ident,
+                kind: hir::ItemKind::Fn(ref sig, ..),
+                owner_id,
+                ..
+            }) => {
+                // This is less than ideal, it will not suggest a return type span on any
+                // method called `main`, regardless of whether it is actually the entry point,
+                // but it will still present it as the reason for the expected type.
+                Some((owner_id.def_id, sig.decl, ident.name != sym::main))
             }
-        })
+            Node::TraitItem(&hir::TraitItem {
+                kind: hir::TraitItemKind::Fn(ref sig, ..),
+                owner_id,
+                ..
+            }) => Some((owner_id.def_id, sig.decl, true)),
+            // FIXME: Suggestable if this is not a trait implementation
+            Node::ImplItem(&hir::ImplItem {
+                kind: hir::ImplItemKind::Fn(ref sig, ..),
+                owner_id,
+                ..
+            }) => Some((owner_id.def_id, sig.decl, false)),
+            Node::Expr(&hir::Expr {
+                hir_id,
+                kind: hir::ExprKind::Closure(&hir::Closure { def_id, kind, fn_decl, .. }),
+                ..
+            }) => {
+                match kind {
+                    hir::ClosureKind::CoroutineClosure(_) => {
+                        // FIXME(async_closures): Implement this.
+                        return None;
+                    }
+                    hir::ClosureKind::Closure => Some((def_id, fn_decl, true)),
+                    hir::ClosureKind::Coroutine(hir::CoroutineKind::Desugared(
+                        _,
+                        hir::CoroutineSource::Fn,
+                    )) => {
+                        let (ident, sig, owner_id) = match self.tcx.parent_hir_node(hir_id) {
+                            Node::Item(&hir::Item {
+                                ident,
+                                kind: hir::ItemKind::Fn(ref sig, ..),
+                                owner_id,
+                                ..
+                            }) => (ident, sig, owner_id),
+                            Node::TraitItem(&hir::TraitItem {
+                                ident,
+                                kind: hir::TraitItemKind::Fn(ref sig, ..),
+                                owner_id,
+                                ..
+                            }) => (ident, sig, owner_id),
+                            Node::ImplItem(&hir::ImplItem {
+                                ident,
+                                kind: hir::ImplItemKind::Fn(ref sig, ..),
+                                owner_id,
+                                ..
+                            }) => (ident, sig, owner_id),
+                            _ => return None,
+                        };
+                        Some((owner_id.def_id, sig.decl, ident.name != sym::main))
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
+        }
     }
 
     pub(crate) fn note_internal_mutation_in_method(

@@ -633,23 +633,23 @@ impl<'tcx> Body<'tcx> {
 
     #[inline]
     pub fn yield_ty(&self) -> Option<Ty<'tcx>> {
-        self.coroutine.as_ref().and_then(|coroutine| coroutine.yield_ty)
+        self.coroutine.as_ref()?.yield_ty
     }
 
     #[inline]
     pub fn resume_ty(&self) -> Option<Ty<'tcx>> {
-        self.coroutine.as_ref().and_then(|coroutine| coroutine.resume_ty)
+        self.coroutine.as_ref()?.resume_ty
     }
 
     /// Prefer going through [`TyCtxt::coroutine_layout`] rather than using this directly.
     #[inline]
     pub fn coroutine_layout_raw(&self) -> Option<&CoroutineLayout<'tcx>> {
-        self.coroutine.as_ref().and_then(|coroutine| coroutine.coroutine_layout.as_ref())
+        self.coroutine.as_ref()?.coroutine_layout.as_ref()
     }
 
     #[inline]
     pub fn coroutine_drop(&self) -> Option<&Body<'tcx>> {
-        self.coroutine.as_ref().and_then(|coroutine| coroutine.coroutine_drop.as_ref())
+        self.coroutine.as_ref()?.coroutine_drop.as_ref()
     }
 
     #[inline]

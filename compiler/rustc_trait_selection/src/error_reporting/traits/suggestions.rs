@@ -76,13 +76,12 @@ impl<'tcx, 'a> CoroutineData<'tcx, 'a> {
     where
         F: Fn(ty::Binder<'tcx, Ty<'tcx>>) -> bool,
     {
-        infer_context.tcx.upvars_mentioned(coroutine_did).and_then(|upvars| {
-            upvars.iter().find_map(|(upvar_id, upvar)| {
-                let upvar_ty = self.0.node_type(*upvar_id);
-                let upvar_ty = infer_context.resolve_vars_if_possible(upvar_ty);
-                ty_matches(ty::Binder::dummy(upvar_ty))
-                    .then(|| CoroutineInteriorOrUpvar::Upvar(upvar.span))
-            })
+        let upvars = infer_context.tcx.upvars_mentioned(coroutine_did)?;
+        upvars.iter().find_map(|(upvar_id, upvar)| {
+            let upvar_ty = self.0.node_type(*upvar_id);
+            let upvar_ty = infer_context.resolve_vars_if_possible(upvar_ty);
+            ty_matches(ty::Binder::dummy(upvar_ty))
+                .then(|| CoroutineInteriorOrUpvar::Upvar(upvar.span))
         })
     }
 
@@ -142,7 +141,7 @@ pub fn suggest_restriction<'tcx, G: EmissionGuarantee>(
     let generics = tcx.generics_of(item_id);
     // Given `fn foo(t: impl Trait)` where `Trait` requires assoc type `A`...
     if let Some((param, bound_str, fn_sig)) =
-        fn_sig.zip(projection).and_then(|(sig, p)| match *p.self_ty().kind() {
+        fn_sig.and_then(|sig| match *projection?.self_ty().kind() {
             // Shenanigans to get the `Trait` from the `impl Trait`.
             ty::Param(param) => {
                 let param_def = generics.type_param(param, tcx);
@@ -2518,15 +2517,11 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         CoroutineKind::Desugared(
                             CoroutineDesugaring::Async,
                             CoroutineSource::Fn,
-                        ) => self
-                            .tcx
-                            .parent(coroutine_did)
-                            .as_local()
-                            .map(|parent_did| self.tcx.local_def_id_to_hir_id(parent_did))
-                            .and_then(|parent_hir_id| hir.opt_name(parent_hir_id))
-                            .map(|name| {
-                                format!("future returned by `{name}` is not {trait_name}")
-                            })?,
+                        ) => {
+                            let parent_did = self.tcx.parent(coroutine_did).as_local()?;
+                            let name = hir.opt_name(self.tcx.local_def_id_to_hir_id(parent_did))?;
+                            format!("future returned by `{name}` is not {trait_name}")
+                        }
                         CoroutineKind::Desugared(
                             CoroutineDesugaring::Async,
                             CoroutineSource::Block,
@@ -2542,15 +2537,11 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                         CoroutineKind::Desugared(
                             CoroutineDesugaring::AsyncGen,
                             CoroutineSource::Fn,
-                        ) => self
-                            .tcx
-                            .parent(coroutine_did)
-                            .as_local()
-                            .map(|parent_did| self.tcx.local_def_id_to_hir_id(parent_did))
-                            .and_then(|parent_hir_id| hir.opt_name(parent_hir_id))
-                            .map(|name| {
-                                format!("async iterator returned by `{name}` is not {trait_name}")
-                            })?,
+                        ) => {
+                            let parent_did = self.tcx.parent(coroutine_did).as_local()?;
+                            let name = hir.opt_name(self.tcx.local_def_id_to_hir_id(parent_did))?;
+                            format!("async iterator returned by `{name}` is not {trait_name}")
+                        }
                         CoroutineKind::Desugared(
                             CoroutineDesugaring::AsyncGen,
                             CoroutineSource::Block,
@@ -2566,14 +2557,9 @@ impl<'a, 'tcx> TypeErrCtxt<'a, 'tcx> {
                             )
                         }
                         CoroutineKind::Desugared(CoroutineDesugaring::Gen, CoroutineSource::Fn) => {
-                            self.tcx
-                                .parent(coroutine_did)
-                                .as_local()
-                                .map(|parent_did| self.tcx.local_def_id_to_hir_id(parent_did))
-                                .and_then(|parent_hir_id| hir.opt_name(parent_hir_id))
-                                .map(|name| {
-                                    format!("iterator returned by `{name}` is not {trait_name}")
-                                })?
+                            let parent_did = self.tcx.parent(coroutine_did).as_local()?;
+                            let name = hir.opt_name(self.tcx.local_def_id_to_hir_id(parent_did))?;
+                            format!("iterator returned by `{name}` is not {trait_name}")
                         }
                         CoroutineKind::Desugared(
                             CoroutineDesugaring::Gen,

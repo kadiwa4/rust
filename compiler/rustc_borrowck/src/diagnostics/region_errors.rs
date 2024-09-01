@@ -164,7 +164,7 @@ impl<'infcx, 'tcx> MirBorrowckCtxt<'_, '_, 'infcx, 'tcx> {
     /// to find a good name from that. Returns `None` if we can't find
     /// one (e.g., this is just some random part of the CFG).
     pub(super) fn to_error_region(&self, r: RegionVid) -> Option<ty::Region<'tcx>> {
-        self.to_error_region_vid(r).and_then(|r| self.regioncx.region_definition(r).external_name)
+        self.regioncx.region_definition(self.to_error_region_vid(r)?).external_name
     }
 
     /// Returns the `RegionVid` corresponding to the region returned by

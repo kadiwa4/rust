@@ -257,9 +257,7 @@ impl AttrArgsEq {
     fn value_str(&self) -> Option<Symbol> {
         match self {
             AttrArgsEq::Ast(expr) => match expr.kind {
-                ExprKind::Lit(token_lit) => {
-                    LitKind::from_token_lit(token_lit).ok().and_then(|lit| lit.str())
-                }
+                ExprKind::Lit(token_lit) => LitKind::from_token_lit(token_lit).ok()?.str(),
                 _ => None,
             },
             AttrArgsEq::Hir(lit) => lit.kind.str(),
@@ -470,7 +468,7 @@ impl NestedMetaItem {
 
     /// For a single-segment meta item, returns its name; otherwise, returns `None`.
     pub fn ident(&self) -> Option<Ident> {
-        self.meta_item().and_then(|meta_item| meta_item.ident())
+        self.meta_item()?.ident()
     }
 
     pub fn name_or_empty(&self) -> Symbol {
@@ -489,23 +487,20 @@ impl NestedMetaItem {
 
     /// Gets a list of inner meta items from a list `MetaItem` type.
     pub fn meta_item_list(&self) -> Option<&[NestedMetaItem]> {
-        self.meta_item().and_then(|meta_item| meta_item.meta_item_list())
+        self.meta_item()?.meta_item_list()
     }
 
     /// If it's a singleton list of the form `foo(lit)`, returns the `foo` and
     /// the `lit`.
     pub fn singleton_lit_list(&self) -> Option<(Symbol, &MetaItemLit)> {
-        self.meta_item().and_then(|meta_item| {
-            meta_item.meta_item_list().and_then(|meta_item_list| {
-                if meta_item_list.len() == 1
-                    && let Some(ident) = meta_item.ident()
-                    && let Some(lit) = meta_item_list[0].lit()
-                {
-                    return Some((ident.name, lit));
-                }
-                None
-            })
-        })
+        let meta_item = self.meta_item()?;
+        if let [only_nested_item] = meta_item.meta_item_list()?
+            && let Some(ident) = meta_item.ident()
+            && let Some(lit) = only_nested_item.lit()
+        {
+            return Some((ident.name, lit));
+        }
+        None
     }
 
     /// See [`MetaItem::name_value_literal_span`].
@@ -516,7 +511,7 @@ impl NestedMetaItem {
     /// Gets the string value if `self` is a `MetaItem` and the `MetaItem` is a
     /// `MetaItemKind::NameValue` variant containing a string, otherwise `None`.
     pub fn value_str(&self) -> Option<Symbol> {
-        self.meta_item().and_then(|meta_item| meta_item.value_str())
+        self.meta_item()?.value_str()
     }
 
     /// Returns the `MetaItemLit` if `self` is a `NestedMetaItem::Literal`s.

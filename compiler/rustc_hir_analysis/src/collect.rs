@@ -1262,27 +1262,25 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
         .get_attr(def_id, sym::rustc_must_implement_one_of)
         // Check that there are at least 2 arguments of `#[rustc_must_implement_one_of]`
         // and that they are all identifiers
-        .and_then(|attr| match attr.meta_item_list() {
-            Some(items) if items.len() < 2 => {
+        .and_then(|attr| {
+            // Error is reported by `rustc_attr!`
+            let nested_items = attr.meta_item_list()?;
+            if nested_items.len() < 2 {
                 tcx.dcx().emit_err(errors::MustImplementOneOfAttribute { span: attr.span });
 
-                None
+                return None;
             }
-            Some(items) => items
+            let list = nested_items
                 .into_iter()
                 .map(|item| item.ident().ok_or(item.span()))
                 .collect::<Result<Box<[_]>, _>>()
                 .map_err(|span| {
                     tcx.dcx().emit_err(errors::MustBeNameOfAssociatedFunction { span });
                 })
-                .ok()
-                .zip(Some(attr.span)),
-            // Error is reported by `rustc_attr!`
-            None => None,
-        })
-        // Check that all arguments of `#[rustc_must_implement_one_of]` reference
-        // functions in the trait with default implementations
-        .and_then(|(list, attr_span)| {
+                .ok()?;
+
+            // Check that all arguments of `#[rustc_must_implement_one_of]` reference
+            // functions in the trait with default implementations
             let errors = list.iter().filter_map(|ident| {
                 let item = items.iter().find(|item| item.ident == *ident);
 
@@ -1291,7 +1289,7 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
                         if !tcx.defaultness(item.id.owner_id).has_value() {
                             tcx.dcx().emit_err(errors::FunctionNotHaveDefaultImplementation {
                                 span: item.span,
-                                note_span: attr_span,
+                                note_span: attr.span,
                             });
 
                             return Some(());
@@ -1302,7 +1300,7 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
                     Some(item) => {
                         tcx.dcx().emit_err(errors::MustImplementNotFunction {
                             span: item.span,
-                            span_note: errors::MustImplementNotFunctionSpanNote { span: attr_span },
+                            span_note: errors::MustImplementNotFunctionSpanNote { span: attr.span },
                             note: errors::MustImplementNotFunctionNote {},
                         });
                     }
@@ -1313,11 +1311,11 @@ fn trait_def(tcx: TyCtxt<'_>, def_id: LocalDefId) -> ty::TraitDef {
 
                 Some(())
             });
+            if errors.count() != 0 {
+                return None;
+            }
 
-            (errors.count() == 0).then_some(list)
-        })
-        // Check for duplicates
-        .and_then(|list| {
+            // Check for duplicates
             let mut set: UnordMap<Symbol, Span> = Default::default();
             let mut no_dups = true;
 

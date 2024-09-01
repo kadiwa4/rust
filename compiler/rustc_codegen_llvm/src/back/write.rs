@@ -368,7 +368,7 @@ impl<'a> DiagnosticHandlers<'a> {
                 };
                 dir.join(format!("{}.{stage_suffix}.opt.yaml", module.name))
             })
-            .and_then(|dir| dir.to_str().and_then(|p| CString::new(p).ok()));
+            .and_then(|dir| CString::new(dir.to_str()?).ok());
 
         let pgo_available = cgcx.opts.cg.profile_use.is_some();
         let data = Box::into_raw(Box::new((cgcx, dcx)));

@@ -64,9 +64,7 @@ where
         // Stop at `Deref`; standard ABI alignment applies there.
         .take_while(|(_base, elem)| !matches!(elem, ProjectionElem::Deref))
         // Consider the packed alignments at play here...
-        .filter_map(|(base, _elem)| {
-            base.ty(local_decls, tcx).ty.ty_adt_def().and_then(|adt| adt.repr().pack)
-        })
+        .filter_map(|(base, _elem)| base.ty(local_decls, tcx).ty.ty_adt_def()?.repr().pack)
         // ... and compute their minimum.
         // The overall smallest alignment is what matters.
         .min()

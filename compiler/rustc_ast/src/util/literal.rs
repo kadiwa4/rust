@@ -250,8 +250,8 @@ impl MetaItemLit {
 
     /// Converts an arbitrary token into meta item literal.
     pub fn from_token(token: &Token) -> Option<MetaItemLit> {
-        token::Lit::from_token(token)
-            .and_then(|token_lit| MetaItemLit::from_token_lit(token_lit, token.span).ok())
+        let token_lit = token::Lit::from_token(token)?;
+        MetaItemLit::from_token_lit(token_lit, token.span).ok()
     }
 }
 

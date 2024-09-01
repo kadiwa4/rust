@@ -43,9 +43,9 @@ fn load_metadata_with(
     let file =
         File::open(path).map_err(|e| format!("failed to open file '{}': {}", path.display(), e))?;
 
-    unsafe { Mmap::map(file) }
-        .map_err(|e| format!("failed to mmap file '{}': {}", path.display(), e))
-        .and_then(|mmap| try_slice_owned(mmap, |mmap| f(mmap)))
+    let mmap = unsafe { Mmap::map(file) }
+        .map_err(|e| format!("failed to mmap file '{}': {}", path.display(), e))?;
+    try_slice_owned(mmap, |mmap| f(mmap))
 }
 
 impl MetadataLoader for DefaultMetadataLoader {
